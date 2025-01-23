@@ -40,20 +40,62 @@ boot.var <- function(df.train, df.test, type, predictor_columns, threshold) {
   }
   
   if (type %in% c("linear", "gam", "trees")) {
-    df.test$delta.var <- rowVars(as.matrix(boot.delta))
-    df.test$delta.s.var <- rowVars(as.matrix(boot.delta.s))
-    df.test$R.s.var <- rowVars(as.matrix(boot.R.s))
+    df.test$delta.var <- apply(as.matrix(boot.delta), 1, mad)^2
+    df.test$delta.s.var <- apply(as.matrix(boot.delta.s), 1, mad)^2
+    df.test$R.s.var <- apply(as.matrix(boot.R.s), 1, mad)^2
+    df.test$delta.lower <- matrixStats::rowQuantiles(as.matrix(boot.delta), probs = 0.025)
+    df.test$delta.upper <- matrixStats::rowQuantiles(as.matrix(boot.delta), probs = 0.975)
+    df.test$delta.s.lower <- matrixStats::rowQuantiles(as.matrix(boot.delta.s), probs = 0.025)
+    df.test$delta.s.upper <- matrixStats::rowQuantiles(as.matrix(boot.delta.s), probs = 0.975)
+    df.test$R.s.lower <- matrixStats::rowQuantiles(as.matrix(boot.R.s), probs = 0.025)
+    df.test$R.s.upper <- matrixStats::rowQuantiles(as.matrix(boot.R.s), probs = 0.975)
   } else {
-    df.test$delta.var.linear <- rowVars(as.matrix(boot.delta.linear))
-    df.test$delta.s.var.linear <- rowVars(as.matrix(boot.delta.s.linear))
-    df.test$R.s.var.linear <- rowVars(as.matrix(boot.R.s.linear))
-    df.test$delta.var.gam <- rowVars(as.matrix(boot.delta.gam))
-    df.test$delta.s.var.gam <- rowVars(as.matrix(boot.delta.s.gam))
-    df.test$R.s.var.gam <- rowVars(as.matrix(boot.R.s.gam))
-    df.test$delta.var.trees <- rowVars(as.matrix(boot.delta.trees))
-    df.test$delta.s.var.trees <- rowVars(as.matrix(boot.delta.s.trees))
-    df.test$R.s.var.trees <- rowVars(as.matrix(boot.R.s.trees))
+    df.test$delta.var.linear <- apply(as.matrix(boot.delta.linear), 1, mad)^2
+    df.test$delta.s.var.linear <- apply(as.matrix(boot.delta.s.linear), 1, mad)^2
+    df.test$R.s.var.linear <- apply(as.matrix(boot.R.s.linear), 1, mad)^2
+    df.test$delta.lower.linear <- matrixStats::rowQuantiles(as.matrix(boot.delta.linear), probs = 0.025)
+    df.test$delta.upper.linear <- matrixStats::rowQuantiles(as.matrix(boot.delta.linear), probs = 0.975)
+    df.test$delta.s.lower.linear <- matrixStats::rowQuantiles(as.matrix(boot.delta.s.linear), probs = 0.025)
+    df.test$delta.s.upper.linear <- matrixStats::rowQuantiles(as.matrix(boot.delta.s.linear), probs = 0.975)
+    df.test$R.s.lower.linear <- matrixStats::rowQuantiles(as.matrix(boot.R.s.linear), probs = 0.025)
+    df.test$R.s.upper.linear <- matrixStats::rowQuantiles(as.matrix(boot.R.s.linear), probs = 0.975)
+    df.test$delta.var.gam <- apply(as.matrix(boot.delta.gam), 1, mad)^2
+    df.test$delta.s.var.gam <- apply(as.matrix(boot.delta.s.gam), 1, mad)^2
+    df.test$R.s.var.gam <- apply(as.matrix(boot.R.s.gam), 1, mad)^2
+    df.test$delta.lower.gam <- matrixStats::rowQuantiles(as.matrix(boot.delta.gam), probs = 0.025)
+    df.test$delta.upper.gam <- matrixStats::rowQuantiles(as.matrix(boot.delta.gam), probs = 0.975)
+    df.test$delta.s.lower.gam <- matrixStats::rowQuantiles(as.matrix(boot.delta.s.gam), probs = 0.025)
+    df.test$delta.s.upper.gam <- matrixStats::rowQuantiles(as.matrix(boot.delta.s.gam), probs = 0.975)
+    df.test$R.s.lower.gam <- matrixStats::rowQuantiles(as.matrix(boot.R.s.gam), probs = 0.025)
+    df.test$R.s.upper.gam <- matrixStats::rowQuantiles(as.matrix(boot.R.s.gam), probs = 0.975)
+    df.test$delta.var.trees <- apply(as.matrix(boot.delta.trees), 1, mad)^2
+    df.test$delta.s.var.trees <- apply(as.matrix(boot.delta.s.trees), 1, mad)^2
+    df.test$R.s.var.trees <- apply(as.matrix(boot.R.s.trees), 1, mad)^2
+    df.test$delta.lower.trees <- matrixStats::rowQuantiles(as.matrix(boot.delta.trees), probs = 0.025)
+    df.test$delta.upper.trees <- matrixStats::rowQuantiles(as.matrix(boot.delta.trees), probs = 0.975)
+    df.test$delta.s.lower.trees <- matrixStats::rowQuantiles(as.matrix(boot.delta.s.trees), probs = 0.025)
+    df.test$delta.s.upper.trees <- matrixStats::rowQuantiles(as.matrix(boot.delta.s.trees), probs = 0.975)
+    df.test$R.s.lower.trees <- matrixStats::rowQuantiles(as.matrix(boot.R.s.trees), probs = 0.025)
+    df.test$R.s.upper.trees <- matrixStats::rowQuantiles(as.matrix(boot.R.s.trees), probs = 0.975)
   }
+  ##################################################
+  
+  # old boostrap before I fixed to be mad and quantiles, keep just in case for now
+  #if (type %in% c("linear", "gam", "trees")) {
+  #  df.test$delta.var <- rowVars(as.matrix(boot.delta))
+  #  df.test$delta.s.var <- rowVars(as.matrix(boot.delta.s))
+  #  df.test$R.s.var <- rowVars(as.matrix(boot.R.s))
+  #} else {
+  #  df.test$delta.var.linear <- rowVars(as.matrix(boot.delta.linear))
+  #  df.test$delta.s.var.linear <- rowVars(as.matrix(boot.delta.s.linear))
+  #  df.test$R.s.var.linear <- rowVars(as.matrix(boot.R.s.linear))
+  #  df.test$delta.var.gam <- rowVars(as.matrix(boot.delta.gam))
+  #  df.test$delta.s.var.gam <- rowVars(as.matrix(boot.delta.s.gam))
+  #  df.test$R.s.var.gam <- rowVars(as.matrix(boot.R.s.gam))
+  #  df.test$delta.var.trees <- rowVars(as.matrix(boot.delta.trees))
+  #  df.test$delta.s.var.trees <- rowVars(as.matrix(boot.delta.s.trees))
+  #  df.test$R.s.var.trees <- rowVars(as.matrix(boot.R.s.trees))
+  #}
   
   if (!is.null(threshold)) {
     if (type %in% c("linear", "gam", "trees")) {

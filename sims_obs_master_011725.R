@@ -192,6 +192,22 @@ get.truth <- function(setting, grid) {
   data.frame(X1 = grid, delta = true.delta, delta.s = true.delta.s, R.s = true.R.s)
 }
 
+# function to get X1 cutoff where PTE > threshold. Need to fill out for other settings later, basically the inverse of the get.truth
+get.X1.cutoff <- function(setting, threshold) {
+  params <- get.parameters(setting)
+  
+  if (setting == 1) {
+    # Extract coefficients
+    G.coef <- params$Y.coefficients[1]
+    S.coef <- params$Y.coefficients[2]
+    GX1.coef <- params$Y.coefficients[9]
+    
+    # this could change if setting changes! check algebra
+    cutoff <- ((( S.coef * (params$S.coefficients[1])) / threshold) - G.coef -  (S.coef * (params$S.coefficients[1]))) / GX1.coef
+    return(cutoff)
+  }
+}
+
 
 #THIS IS WHAT MAKES EACH PARALLEL VERSION DIFFERENT
 set.seed(parallel.num*100)
