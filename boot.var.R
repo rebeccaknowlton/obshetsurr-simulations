@@ -1,4 +1,4 @@
-boot.var <- function(df.train, df.test, type, predictor_columns, threshold) {
+boot.var <- function(df.train, df.test, type, numeric_predictors, categorical_predictors, threshold, use.actual.control.S) {
   num.boot <- 200
   
   if (type %in% c("linear", "gam", "trees")) {
@@ -21,7 +21,7 @@ boot.var <- function(df.train, df.test, type, predictor_columns, threshold) {
   for (j in 1:num.boot) {
     boot.data.train <- df.train[sample(1:nrow(df.train), nrow(df.train), replace = TRUE),]
     
-    boot.results <- estimate.PTE(df.train = boot.data.train, df.test = df.test, type = type, predictor_columns)
+    boot.results <- estimate.PTE(df.train = boot.data.train, df.test = df.test, type = type, numeric_predictors, categorical_predictors, use.actual.control.S)
     if (type %in% c("linear", "gam", "trees")) {
       boot.delta[,j] <- boot.results$delta
       boot.delta.s[,j] <- boot.results$delta.s
@@ -78,32 +78,14 @@ boot.var <- function(df.train, df.test, type, predictor_columns, threshold) {
     df.test$R.s.lower.trees <- matrixStats::rowQuantiles(as.matrix(boot.R.s.trees), probs = 0.025)
     df.test$R.s.upper.trees <- matrixStats::rowQuantiles(as.matrix(boot.R.s.trees), probs = 0.975)
   }
-  ##################################################
-  
-  # old boostrap before I fixed to be mad and quantiles, keep just in case for now
-  #if (type %in% c("linear", "gam", "trees")) {
-  #  df.test$delta.var <- rowVars(as.matrix(boot.delta))
-  #  df.test$delta.s.var <- rowVars(as.matrix(boot.delta.s))
-  #  df.test$R.s.var <- rowVars(as.matrix(boot.R.s))
-  #} else {
-  #  df.test$delta.var.linear <- rowVars(as.matrix(boot.delta.linear))
-  #  df.test$delta.s.var.linear <- rowVars(as.matrix(boot.delta.s.linear))
-  #  df.test$R.s.var.linear <- rowVars(as.matrix(boot.R.s.linear))
-  #  df.test$delta.var.gam <- rowVars(as.matrix(boot.delta.gam))
-  #  df.test$delta.s.var.gam <- rowVars(as.matrix(boot.delta.s.gam))
-  #  df.test$R.s.var.gam <- rowVars(as.matrix(boot.R.s.gam))
-  #  df.test$delta.var.trees <- rowVars(as.matrix(boot.delta.trees))
-  #  df.test$delta.s.var.trees <- rowVars(as.matrix(boot.delta.s.trees))
-  #  df.test$R.s.var.trees <- rowVars(as.matrix(boot.R.s.trees))
-  #}
   
   if (!is.null(threshold)) {
     if (type %in% c("linear", "gam", "trees")) {
-      df.test$p.val <- p.adjust(rowMeans(boot.R.s > threshold), method = "BH")
+      df.test$p.val <- p.adjust(rowMeans(boot.R.s <= threshold), method = "BH")
     } else {
-      df.test$p.val.linear <- p.adjust(rowMeans(boot.R.s.linear > threshold), method = "BH")
-      df.test$p.val.gam <- p.adjust(rowMeans(boot.R.s.gam > threshold), method = "BH")
-      df.test$p.val.trees <- p.adjust(rowMeans(boot.R.s.trees > threshold), method = "BH")
+      df.test$p.val.linear <- p.adjust(rowMeans(boot.R.s.linear <= threshold), method = "BH")
+      df.test$p.val.gam <- p.adjust(rowMeans(boot.R.s.gam <= threshold), method = "BH")
+      df.test$p.val.trees <- p.adjust(rowMeans(boot.R.s.trees <= threshold), method = "BH")
     }
   }
   

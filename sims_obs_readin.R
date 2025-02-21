@@ -5,7 +5,8 @@
 setwd("C:/Users/rkkno/Documents/University of Texas at Austin/Observational/output files")
 library(quantreg)
 library(ggplot2)
-setting <- 1
+library(patchwork)
+setting <- 4
 k <- 0.5
 n.test <- 200  
 
@@ -116,18 +117,17 @@ for (i in 1:n.iter) {
 calculate.summaries <- function(estimate.grid, variance.grid, lower.grid, upper.grid, truth.vec) {
   
   truth.mat <- matrix(rep(truth.vec, each = n.iter), nrow = n.iter)
-  ESE <- apply(estimate.grid, 2, sd)
-  Bias <- colMeans(estimate.grid - truth.mat)
-  ASE <- colMeans(sqrt(variance.grid))
-  MSE <- colMeans((estimate.grid - truth.mat)^2) 
+  ESE <- apply(estimate.grid, 2, mad) 
+  Bias <- colMedians(estimate.grid - truth.mat) 
+  Abs.Bias <- colMedians(abs(estimate.grid - truth.mat))
+  ASE <- colMedians(sqrt(variance.grid))
+  MSE <- colMedians((estimate.grid - truth.mat)^2) 
   Coverage <- colMeans((lower.grid <= truth.mat) & (upper.grid >= truth.mat))
-  CI.lower <- colMeans(lower.grid)
-  CI.upper <- colMeans(upper.grid)
-  #Coverage <- colMeans((estimate.grid - 1.96 * sqrt(variance.grid) <= truth.mat) & 
-  #                       (estimate.grid + 1.96 * sqrt(variance.grid) >= truth.mat))
+  CI.lower <- colMedians(lower.grid)
+  CI.upper <- colMedians(upper.grid)
   
   # Combine metrics
-  result <- rbind(Bias, ESE, ASE, MSE, Coverage, CI.lower, CI.upper)
+  result <- rbind(Bias, Abs.Bias, ESE, ASE, MSE, Coverage, CI.lower, CI.upper)
   result <- cbind(result, rowMeans(result))  # Add average over X1.grid
   colnames(result) <- c(as.character(round(X1.grid, 2)), "Avg")
   return(result)
@@ -157,24 +157,25 @@ results.R.s.linear.small <- results.R.s.linear[,indices]
 results.R.s.gam.small <- results.R.s.gam[,indices]
 results.R.s.tree.small <- results.R.s.tree[,indices]
   
-# make combined table with averages only and drop CI lower/upper
+# make combined table with averages only and drop CI lower/upper, bias
 table.all <- data.frame(
-  Linear = results.R.s.linear[1:5, "Avg"],
-  GAM = results.R.s.gam[1:5, "Avg"],
-  Trees = results.R.s.tree[1:5, "Avg"]
+  Linear = results.R.s.linear[2:6, "Avg"],
+  GAM = results.R.s.gam[2:6, "Avg"],
+  Trees = results.R.s.tree[2:6, "Avg"]
 )
 
 # Print the summary table
 print(round(table.all, 3))
+rownames(table.all)[1] <- "Bias"
 latex.table(format(round(as.matrix(table.all),3), nsmall =3), paste0("simres_",setting,"_R.s"), caption = "", dcolumn = T)
 
 # ID strong surrogate
 cutoff <- get.X1.cutoff(setting, k)
-outputfile$true.flag <- outputfile$X1 >= cutoff  
+outputfile$true.flag <- outputfile$X1 <= cutoff  
 
 # Function to compute sensitivity, specificity, PPV, and NPV
 flag.summaries <- function(pvals, true.flags) {
-  predicted_flag <- (pvals < 0.05)  # Reject null if p-value < 0.05
+  predicted_flag <- (pvals > 0.95)  # Reject null if p-value < 0.05 
   
   TP <- sum(predicted_flag & true.flags)   # True Positives
   FP <- sum(predicted_flag & !true.flags)  # False Positives
@@ -219,17 +220,21 @@ plot_data_Rs$Truth <- truth$R.s
 plot_data_Rs$Estimate <- plot_data_Rs$Truth + plot_data_Rs$Bias
 plot_data_Rs$CI.lower <- plot_data_Rs$CI.lower
 plot_data_Rs$CI.upper <- plot_data_Rs$CI.upper
-#plot_data_Rs$CI.lower <- plot_data_Rs$Estimate - 1.96*plot_data_Rs$ASE
-#plot_data_Rs$CI.upper <- plot_data_Rs$Estimate + 1.96*plot_data_Rs$ASE
 
-ggplot(plot_data_Rs, aes(x = X1.grid, y = Estimate)) + 
+res.plot <- ggplot(plot_data_Rs, aes(x = X1.grid, y = Estimate)) + 
   geom_line(size = 1) +
   geom_ribbon(aes(ymin = CI.lower, ymax = CI.upper), alpha = 0.2) +
   geom_line(aes(y = Truth), color = "black", linetype = "dashed", size = 1) +
   facet_wrap(~Method)  +
-  labs(title = "Estimated PTE",
+  labs(title = paste0("Setting ", setting),
        x = "X1",
-       y = "R") +
-  theme_minimal()
+       y = "PTE (R.s)") +
+  theme_minimal() +
+  ylim(0,1)
 
-# eventually when I have results for all settings, want to make this into a combined plot where each row is a different setting
+assign(paste0("result_", setting), res.plot)
+
+# this plot will only work if you read in all settings first
+result_1 / result_2 / result_3
+
+result_4

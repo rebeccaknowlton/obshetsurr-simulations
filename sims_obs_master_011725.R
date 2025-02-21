@@ -21,7 +21,7 @@ get.parameters <- function(setting) { # linear models correct
       G.coefficients = c(0.2, 0.3, 0.5, 0.2, 0.4, 0.1), # Coeffs for X1 to X6
       S.coefficients = c(1.5, 0.2, 0.2, 0.3, 0.1, 0.4, 0.3), # Coeffs for G, X1 to X6
       Y.coefficients = c(1, 2, 0.2, 0.5, 0.2, 0.1, 0.3, 0.4, 2), # Coeffs for G, S, X1 to X6, G*X1
-      S.sd = 0.5,
+      S.sd = c(0.4, 1.8), # SD for the control and treated groups
       Y.sd = 1
     )
   } else if (setting == 2) { # linear models broken, so GAM should be better
@@ -43,7 +43,7 @@ get.parameters <- function(setting) { # linear models correct
           Y.coefficients[7] * log(X5 + 1) + Y.coefficients[8] * sqrt(X6) + 
           Y.coefficients[9] * (X1^2) * G
       },
-      S.sd = 0.5,
+      S.sd = c(0.4, 1.8), # SD for the control and treated groups
       Y.sd = 1
     )
   } else if (setting == 3) { # GAM broken
@@ -59,14 +59,19 @@ get.parameters <- function(setting) { # linear models correct
       G.coefficients = c(0.2, 0.3, 0.5, 0.2, 0.4, 0.1), # Coeffs for X1 to X6
       S.coefficients = c(1, 0.2, 0.2, 0.3, 0.1, 0.4, 0.3), # Coeffs for G, X1 to X6
       Y.coefficients = c(1, 2, 0, 0, 0, 0, 0, 0, 0.5, 1, 2, 1.5), # Coeffs for G, S, X1 to X6, X1*X5, X2*X3, X4*X6, G*X1 in the Y.function
+      #Y.function = function(Y.coefficients, G, S, X1, X2, X3, X4, X5, X6) {
+      #  Y.coefficients[1] * G + Y.coefficients[2] * S +
+      #    Y.coefficients[9] * exp(-X1^2) +
+      #    Y.coefficients[10] * (X2 * sin(X3)) +
+      #    Y.coefficients[11] * (X4^2 * log(X6 + 1)) +
+      #    Y.coefficients[12] * (X1^2) * G
+      #},
       Y.function = function(Y.coefficients, G, S, X1, X2, X3, X4, X5, X6) {
-        Y.coefficients[1] * G + Y.coefficients[2] * S +
-          Y.coefficients[9] * exp(-X1^2) +
-          Y.coefficients[10] * (X2 * sin(X3)) +
-          Y.coefficients[11] * (X4^2 * log(X6 + 1)) +
+        Y.coefficients[1] * G + Y.coefficients[2] * S +  
+          Y.coefficients[9] * X1 * X5^2 + Y.coefficients[10] * log(X2 / X3) + Y.coefficients[11] * sin(X4 + X6) +
           Y.coefficients[12] * (X1^2) * G
       },
-      S.sd = 0.5,
+      S.sd = c(0.4, 1.8), # SD for the control and treated groups
       Y.sd = 1
     )
   } else if (setting == 4) { # same as setting 1, but with no heterogeneity
@@ -82,7 +87,7 @@ get.parameters <- function(setting) { # linear models correct
       G.coefficients = c(0.2, 0.3, 0.5, 0.2, 0.4, 0.1),
       S.coefficients = c(1, 0.2, 0.2, 0.3, 0.1, 0.4, 0.3),
       Y.coefficients = c(1, 2, 0.2, 0.5, 0.2, 0.1, 0.3, 0.4, 0),
-      S.sd = 0.5,
+      S.sd = c(0.4, 1.8), # SD for the control and treated groups
       Y.sd = 1
     )
   } else {
@@ -124,7 +129,7 @@ generate.data <- function(n, setting) {
     params$S.coefficients[2] * X1 + params$S.coefficients[3] * X2 +
     params$S.coefficients[4] * X3 + params$S.coefficients[5] * X4 +
     params$S.coefficients[6] * X5 + params$S.coefficients[7] * X6 +
-    rnorm(n, 0, params$S.sd)
+    rnorm(n, 0, params$S.sd[1] * (1 - G) + params$S.sd[2] * G)
 
   # Outcome Y
   if (setting == 1 | setting == 4) {
@@ -204,8 +209,29 @@ get.X1.cutoff <- function(setting, threshold) {
     
     # this could change if setting changes! check algebra
     cutoff <- ((( S.coef * (params$S.coefficients[1])) / threshold) - G.coef -  (S.coef * (params$S.coefficients[1]))) / GX1.coef
-    return(cutoff)
   }
+  
+  if (setting == 2) {
+    # Extract coefficients
+    G.coef <- params$Y.coefficients[1]
+    S.coef <- params$Y.coefficients[2]
+    GX1.coef <- params$Y.coefficients[9]
+    
+    # this could change if setting changes! check algebra
+    cutoff <- sqrt(((( S.coef * (params$S.coefficients[1])) / threshold) - G.coef -  (S.coef * (params$S.coefficients[1]))) / GX1.coef)
+  }
+  
+  if (setting == 3) {
+    # Extract coefficients
+    G.coef <- params$Y.coefficients[1]
+    S.coef <- params$Y.coefficients[2]
+    GX1.coef <- params$Y.coefficients[12]
+    
+    # this could change if setting changes! check algebra
+    cutoff <- sqrt(((( S.coef * (params$S.coefficients[1])) / threshold) - G.coef -  (S.coef * (params$S.coefficients[1]))) / GX1.coef)
+  }
+  
+  return(cutoff)
 }
 
 
