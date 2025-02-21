@@ -175,7 +175,7 @@ outputfile$true.flag <- outputfile$X1 <= cutoff
 
 # Function to compute sensitivity, specificity, PPV, and NPV
 flag.summaries <- function(pvals, true.flags) {
-  predicted_flag <- (pvals > 0.95)  # Reject null if p-value < 0.05 
+  predicted_flag <- (pvals < 0.05)  # Reject null if p-value < 0.05 
   
   TP <- sum(predicted_flag & true.flags)   # True Positives
   FP <- sum(predicted_flag & !true.flags)  # False Positives
