@@ -1,3 +1,5 @@
+#LP changed 2/27/25
+
 obs.het.surr <- function(df.train, df.test, type, var.want = FALSE, threshold = NULL, use.actual.control.S = FALSE) {
   # Check that inputs valid
   if (!is.data.frame(df.train) || !is.data.frame(df.test)) {
@@ -32,16 +34,17 @@ obs.het.surr <- function(df.train, df.test, type, var.want = FALSE, threshold = 
   categorical_predictors <- predictor_columns[sapply(df.train[predictor_columns], function(col) is.factor(col) || is.character(col))]
   
   # calculate point estimates
-  df.test <- estimate.PTE(df.train = df.train, df.test = df.test, type = type, 
+  hold = estimate.PTE(df.train = df.train, df.test = df.test, type = type, 
                           numeric_predictors = numeric_predictors, 
                           categorical_predictors = categorical_predictors,
-                          use.actual.control.S = use.actual.control.S)
+                          use.actual.control.S = use.actual.control.S, want.smooth = TRUE, want.tune = TRUE)
   # calculate variance and flag region if desired
+  df.test <- hold$df.test
   if (var.want == TRUE) {
     df.test <- boot.var(df.train = df.train, df.test = df.test, type = type, 
                         numeric_predictors = numeric_predictors, 
                         categorical_predictors = categorical_predictors,
-                        threshold = threshold, use.actual.control.S = use.actual.control.S)
+                        threshold = threshold, use.actual.control.S = use.actual.control.S, gam.smoothers = hold$smooth_params, tree.tuners = hold$tuner_params)
   }
   return(df.test)
 }

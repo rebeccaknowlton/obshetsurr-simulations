@@ -2,11 +2,11 @@
 # set the working directory to where the txt files are
 # make sure the parameters below are up-to-date with the simulations
 
-setwd("C:/Users/rkkno/Documents/University of Texas at Austin/Observational/output files")
+setwd("/Users/parastlm/Dropbox/Texas_Student_Advising/Knowlton/obs_sims_newvariance")
 library(quantreg)
 library(ggplot2)
 library(patchwork)
-setting <- 4
+setting <- 3
 k <- 0.5
 n.test <- 200  
 

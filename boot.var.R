@@ -1,4 +1,5 @@
-boot.var <- function(df.train, df.test, type, numeric_predictors, categorical_predictors, threshold, use.actual.control.S) {
+
+boot.var <- function(df.train, df.test, type, numeric_predictors, categorical_predictors, threshold, use.actual.control.S, gam.smoothers = NULL, tree.tuners =NULL) {
   num.boot <- 200
   
   if (type %in% c("linear", "gam", "trees")) {
@@ -21,7 +22,7 @@ boot.var <- function(df.train, df.test, type, numeric_predictors, categorical_pr
   for (j in 1:num.boot) {
     boot.data.train <- df.train[sample(1:nrow(df.train), nrow(df.train), replace = TRUE),]
     
-    boot.results <- estimate.PTE(df.train = boot.data.train, df.test = df.test, type = type, numeric_predictors, categorical_predictors, use.actual.control.S)
+    boot.results <- estimate.PTE(df.train = boot.data.train, df.test = df.test, type = type, numeric_predictors, categorical_predictors, use.actual.control.S, gam.smoothers = gam.smoothers, tree.tuners = tree.tuners)$df.test
     if (type %in% c("linear", "gam", "trees")) {
       boot.delta[,j] <- boot.results$delta
       boot.delta.s[,j] <- boot.results$delta.s
